@@ -10,6 +10,7 @@ def logout(conn):
 def check_auth(conn, allowed_admins):
     # If 'code' is in the URL, we are returning from Google
     if "code" in st.query_params:
+        print("code is there    ")
         try:
             auth_code = st.query_params["code"]
             # Force the handshake
@@ -49,7 +50,7 @@ def check_auth(conn, allowed_admins):
     st.title("Admin Login")
     st.info("Authorized personnel only.")
     
-    if st.button("Sign in with Google", type="primary"):
+    if st.button("Sign in with Google"):
         # MUST MATCH YOUR SUPABASE REDIRECT ALLOW LIST EXACTLY
         redirect_url = "http://localhost:8501/admin" 
         

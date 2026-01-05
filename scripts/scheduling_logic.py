@@ -1,4 +1,4 @@
-from utils import instruments
+from scripts.utils import instruments
 import pandas as pd
 from ortools.sat.python.cp_model import CpModel, CpSolver
 

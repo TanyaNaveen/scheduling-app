@@ -11,10 +11,18 @@ conn = st.connection("supabase", type=SupabaseConnection)
 if "form_data" not in st.session_state:
     st.session_state.form_data = {}
 
+if "done" not in st.session_state:
+    st.session_state.done = False
+
+if st.session_state.done:
+    st.success("Thank you! Successfully saved your response!")
+    st.info("To edit your response, refresh this page and submit the form again with any updated info.")
+    st.stop()
+
 # 2. Fetch existing emails to prevent duplicates / handle edits
 # We do this outside the form to check in real-time
-response = conn.table("team_availability").select("email").execute()
-existing_emails = [row['email'] for row in response.data] if response.data else []
+# response = conn.table("team_availability").select("email").execute()
+# existing_emails = [row['email'] for row in response.data] if response.data else []
 
 with st.form("user_form"):
     st.subheader("Personal Information")
@@ -34,7 +42,7 @@ with st.form("user_form"):
 
     st.divider()
     st.subheader("Instruments")
-    inst_names = ['Vocals', 'Acoustic Guitar', 'Piano', 'Cajon', 'Strings', 'Electric Guitar'] # TODO: Add bass
+    inst_names = ['Vocals', 'Acoustic Guitar', 'Piano', 'Cajon', 'Strings', 'Electric Guitar', 'Bass Guitar'] # TODO: Add bass
     instruments = {}
     for inst in inst_names:
         key = inst.replace(' ', '_').lower()
@@ -57,34 +65,32 @@ with st.form("user_form"):
 
     submitted = st.form_submit_button("Submit")
     
-    if submitted:
-        # Validation Logic
-        missing_info = not (name and email and phone and freq)
-        any_availability = any(availability.values())
-        any_instrument = any(instruments.values())
+if submitted:
+    # Validation Logic
+    missing_info = not (name and email and phone and freq)
+    any_availability = any(availability.values())
+    any_instrument = any(instruments.values())
 
-        if missing_info:
-            st.error("Please fill out all personal information and select a frequency.")
-        elif not any_availability:
-            st.error("Please select at least one week of availability.")
-        elif not any_instrument:
-            st.error("Please select at least one instrument.")
-        else:
-            form_payload = {
-                "name": name,
-                "email": email,
-                "phone": phone,
-                "num_weeks": freq_options[freq],
-                **availability,
-                **instruments
-            }
-            
-            if email in existing_emails:
-                st.info("You've already responded - submitting again will overwrite your previous response.")
-
-            try:
-                conn.table("team_availability").upsert(form_payload, on_conflict="email").execute()
-                # TODO: Make it so the form goes away on this screen
-                st.success("Successfully saved your response!")
-            except Exception as e:
-                st.error(f"Database Error: {e}")
+    if missing_info:
+        st.error("Please fill out all personal information and select a frequency.")
+    elif not any_availability:
+        st.error("Please select at least one week of availability.")
+    elif not any_instrument:
+        st.error("Please select at least one instrument.")
+    else:
+        form_payload = {
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "num_weeks": freq_options[freq],
+            **availability,
+            **instruments
+        }
+        
+        # DB Write
+        try:
+            conn.table("team_availability").upsert(form_payload, on_conflict="email").execute()
+            st.session_state.done = True
+            st.rerun()
+        except Exception as e:
+            st.error(f"Database Error: {e}")
