@@ -4,5 +4,5 @@ form_page = st.Page("views/form.py", title="Worship Scheduling Form", default=Tr
 admin_page = st.Page("views/admin.py", title="Admin Dashboard")
 
 # Create navigation
-pg = st.navigation([form_page, admin_page], expanded=False)
+pg = st.navigation([form_page], expanded=False)
 pg.run()
