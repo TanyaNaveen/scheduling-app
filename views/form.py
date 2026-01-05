@@ -1,0 +1,90 @@
+import streamlit as st
+import pandas as pd
+from st_supabase_connection import SupabaseConnection
+
+st.title("Worship Scheduling Availability")
+
+# Initialize Connection
+conn = st.connection("supabase", type=SupabaseConnection)
+
+# 1. Initialize Session State
+if "form_data" not in st.session_state:
+    st.session_state.form_data = {}
+
+# 2. Fetch existing emails to prevent duplicates / handle edits
+# We do this outside the form to check in real-time
+response = conn.table("team_availability").select("email").execute()
+existing_emails = [row['email'] for row in response.data] if response.data else []
+
+with st.form("user_form"):
+    st.subheader("Personal Information")
+    name = st.text_input("Name", key="name_input")
+    email = st.text_input("Email", key="email_input").strip().lower()
+    phone = st.text_input("Phone", key="phone_input")
+
+
+    st.divider()
+    st.subheader("Availability")
+    availability = {}
+    # TODO: only be weeks 2-9?
+    weeks = ["Jan 4", "Jan 14", "Jan 21", "Jan 28", "Feb 4", "Feb 11", "Feb 18", "Feb 25", "March 4", "March 11"]
+    for i in range(1, 11):
+        key = f"w{i}"
+        availability[key] = st.checkbox(f"Week {i}: {weeks[i - 1]}", key=f"check_{key}")
+
+    st.divider()
+    st.subheader("Instruments")
+    inst_names = ['Vocals', 'Acoustic Guitar', 'Piano', 'Cajon', 'Strings', 'Electric Guitar'] # TODO: Add bass
+    instruments = {}
+    for inst in inst_names:
+        key = inst.replace(' ', '_').lower()
+        instruments[key] = st.checkbox(inst, key=f"check_{key}")    
+
+    st.divider()
+    st.subheader("Scheduling Preferences")
+    freq_options = {
+        "Once": 1, 
+        "Twice": 2, 
+        "Around once a month": 3, 
+        "Around once every few weeks": 4
+    }
+    freq = st.radio(
+        label="How often would you like to be scheduled this quarter?",
+        options=list(freq_options.keys()),
+        index=None,
+        key="freq_input"
+    )
+
+    submitted = st.form_submit_button("Submit")
+    
+    if submitted:
+        # Validation Logic
+        missing_info = not (name and email and phone and freq)
+        any_availability = any(availability.values())
+        any_instrument = any(instruments.values())
+
+        if missing_info:
+            st.error("Please fill out all personal information and select a frequency.")
+        elif not any_availability:
+            st.error("Please select at least one week of availability.")
+        elif not any_instrument:
+            st.error("Please select at least one instrument.")
+        else:
+            form_payload = {
+                "name": name,
+                "email": email,
+                "phone": phone,
+                "num_weeks": freq_options[freq],
+                **availability,
+                **instruments
+            }
+            
+            if email in existing_emails:
+                st.info("You've already responded - submitting again will overwrite your previous response.")
+
+            try:
+                conn.table("team_availability").upsert(form_payload, on_conflict="email").execute()
+                # TODO: Make it so the form goes away on this screen
+                st.success("Successfully saved your response!")
+            except Exception as e:
+                st.error(f"Database Error: {e}")
