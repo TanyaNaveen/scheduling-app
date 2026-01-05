@@ -1,4 +1,5 @@
 import streamlit as st
+import os 
 
 def logout(conn):
     """Clears Supabase session and app state."""
@@ -51,9 +52,8 @@ def check_auth(conn, allowed_admins):
     st.info("Authorized personnel only.")
     
     if st.button("Sign in with Google"):
-        # MUST MATCH YOUR SUPABASE REDIRECT ALLOW LIST EXACTLY
-        redirect_url = "http://localhost:8501/admin" 
-        
+        redirect_url = os.getenv('AUTH_REDIRECT_URL', "https://ruf-worship-scheduler.streamlit.app/admin")
+
         res = conn.client.auth.sign_in_with_oauth({
             "provider": "google",
             "options": {"redirect_to": redirect_url}
