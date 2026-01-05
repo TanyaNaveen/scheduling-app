@@ -49,10 +49,14 @@ def check_auth(conn, allowed_admins):
     # 4. LOGIN UI (Only shows if no user is found)
     st.session_state.authenticated = False
     st.title("Admin Login")
-    st.info("Authorized personnel only.")
     
     if st.button("Sign in with Google"):
-        redirect_url = os.getenv('AUTH_REDIRECT_URL', "https://ruf-worship-scheduler.streamlit.app/admin")
+        redirect_url = st.secrets.get(
+            "AUTH_REDIRECT_URL",
+            "https://ruf-worship-scheduler.streamlit.app/admin"
+        )
+
+        print(redirect_url)
 
         res = conn.client.auth.sign_in_with_oauth({
             "provider": "google",
@@ -61,6 +65,7 @@ def check_auth(conn, allowed_admins):
         
         # Use HTML redirect to avoid the 'link_button' extra click
         st.markdown(f'<meta http-equiv="refresh" content="0;url={res.url}">', unsafe_allow_html=True)
+        
         st.stop()
 
-    st.stop() # Ensure nothing else runs until we have a user
+    st.stop() 
