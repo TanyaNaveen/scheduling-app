@@ -16,7 +16,7 @@ if "done" not in st.session_state:
 
 if st.session_state.done:
     st.success("Thank you! Successfully saved your response!")
-    st.info("To edit your response, refresh this page and submit the form again with any updated info.")
+    st.info("If you want to edit your response, refresh this page and just fill the form again (with the same email you used before) and with any updated info.")
     st.stop()
 
 with st.form("user_form"):
