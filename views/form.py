@@ -31,7 +31,7 @@ with st.form("user_form"):
     availability = {}
     weeks = ["Jan 14", "Jan 21", "Jan 28", "Feb 4", "Feb 11", "Feb 18", "Feb 25", "March 4", "March 11"]
     for i in range(0, len(weeks)):
-        key = f"w{i}"
+        key = f"w{i + 2}"
         availability[key] = st.checkbox(f"Week {i + 2}: {weeks[i]}", key=f"check_{key}")
 
     st.divider()
