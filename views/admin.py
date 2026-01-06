@@ -4,19 +4,19 @@ from st_supabase_connection import SupabaseConnection
 from scripts.scheduling_logic import ScheduleBuilder 
 from scripts.auth import check_auth, logout 
 
-# 1. Connection
+# DB Connection
 conn = st.connection("supabase", type=SupabaseConnection)
 
-# 2. Authentication Gatekeeper
-# This will stop execution if the user isn't logged in or authorized
-user = check_auth(conn, allowed_admins=["tanyanaveen04@gmail.com"])
+# Make sure that the user is authorized
+admin_res = conn.table("admins").select("email").execute()
+allowed_admins = [row['email'] for row in admin_res.data] if admin_res else []
+user = check_auth(conn, allowed_admins)
 
-# 3. Global Sidebar (Logout)
 st.sidebar.success(f"Logged in: {user.email}")
 if st.sidebar.button("Log Out"):
     logout(conn)
 
-# 4. State Initialization (Only if we passed auth)
+# Initialize State
 if 'solutions' not in st.session_state:
     st.session_state.update({
         'solutions': None,
@@ -24,9 +24,8 @@ if 'solutions' not in st.session_state:
         'edited_schedule': None
     })
 
-def handle_generate():
-    # Use the 'df' defined later or pass it as an argument
-    scheduler = ScheduleBuilder(data=df, n=5)
+def handle_generate(data):
+    scheduler = ScheduleBuilder(data=data, n=5)
     scheduler.build_model()
     sols = scheduler.get_solutions()
     if sols:
@@ -46,7 +45,7 @@ def prev_schedule():
 # --- UI LOGIC ---
 st.title("Admin Scheduling Dashboard")
 
-# 5. Data Fetching
+# Fetch data from supabase DB
 response = conn.table("team_availability").select("*").execute()
 df = pd.DataFrame(response.data)
 
@@ -58,10 +57,9 @@ else:
     st.subheader("View Responses")
     st.dataframe(df)
 
-
-    # 5. Leader Selection (Optimized)
+    # Leader Selection
     with st.expander("Manage Leaders", expanded=False):
-        st.subheader("Assign Leadership Status")
+        st.subheader("Set Leaders")
         name_list = df['name'].tolist()
         
         with st.form("leader_form"):
@@ -71,15 +69,15 @@ else:
             for name in name_list:
                 selected_leaders[name] = st.checkbox(name, value=is_leader_map.get(name, False))
                 
-            if st.form_submit_button("Update All Leaders"):
+            if st.form_submit_button("Update"):
                 for name, is_lead in selected_leaders.items():
                     conn.table("team_availability").update({"is_leader": is_lead}).eq("name", name).execute()
-                st.success("Leadership updated!")
+                st.success("Done!")
                 st.rerun()
 
-    # 6. Generator Section
+    # Generate Schedules
     st.divider()
-    st.button("🚀 Generate New Schedules", on_click=handle_generate, type="primary")
+    st.button("Generate New Schedules", on_click=handle_generate(df))
 
     if st.session_state.solutions is not None:
         if not st.session_state.solutions:
@@ -104,21 +102,21 @@ else:
             col1.button("Prev", on_click=prev_schedule)
             col2.button("Next", on_click=next_schedule)
 
-            # 7. Editable Schedule Area
+            # Editable Schedule Area
             # We store the edited version in state so it persists during the session
             edited_df = st.data_editor(
                 schedule_df,
-                key=f"editor_{curr_idx}", # Key change triggers refresh on new solution
+                key=f"editor_{curr_idx}",
                 width="stretch"
             )
             st.session_state.edited_schedule = edited_df
 
-            # 8. Export Actions
+            # Export Actions
             csv = edited_df.to_csv(index=False).encode("utf-8")
             st.download_button(
                 label="Download this Schedule (CSV)",
                 data=csv,
-                file_name=f"worship_schedule_opt_{curr_idx+1}.csv",
+                file_name=f"worship_schedule_{curr_idx+1}.csv",
                 mime="text/csv",
             )
 
