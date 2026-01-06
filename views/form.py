@@ -7,7 +7,7 @@ st.title("Worship Scheduling Availability")
 # Initialize Connection
 conn = st.connection("supabase", type=SupabaseConnection)
 
-# 1. Initialize Session State
+# Initialize Session State
 if "form_data" not in st.session_state:
     st.session_state.form_data = {}
 
@@ -19,29 +19,24 @@ if st.session_state.done:
     st.info("To edit your response, refresh this page and submit the form again with any updated info.")
     st.stop()
 
-# 2. Fetch existing emails to prevent duplicates / handle edits
-# We do this outside the form to check in real-time
-# response = conn.table("team_availability").select("email").execute()
-# existing_emails = [row['email'] for row in response.data] if response.data else []
-
 with st.form("user_form"):
     st.subheader("Personal Information")
     name = st.text_input("Name", key="name_input")
     email = st.text_input("Email", key="email_input").strip().lower()
     phone = st.text_input("Phone", key="phone_input")
 
-
     st.divider()
     st.subheader("Availability")
+    st.write("Please select all weeks that you are available!")
     availability = {}
-    # TODO: only be weeks 2-9?
-    weeks = ["Jan 4", "Jan 14", "Jan 21", "Jan 28", "Feb 4", "Feb 11", "Feb 18", "Feb 25", "March 4", "March 11"]
-    for i in range(1, 11):
+    weeks = ["Jan 14", "Jan 21", "Jan 28", "Feb 4", "Feb 11", "Feb 18", "Feb 25", "March 4", "March 11"]
+    for i in range(0, len(weeks)):
         key = f"w{i}"
-        availability[key] = st.checkbox(f"Week {i}: {weeks[i - 1]}", key=f"check_{key}")
+        availability[key] = st.checkbox(f"Week {i + 2}: {weeks[i]}", key=f"check_{key}")
 
     st.divider()
     st.subheader("Instruments")
+    st.write("Please select all instruments that you are willing to play!")
     inst_names = ['Vocals', 'Acoustic Guitar', 'Piano', 'Cajon', 'Strings', 'Electric Guitar', 'Bass Guitar'] # TODO: Add bass
     instruments = {}
     for inst in inst_names:

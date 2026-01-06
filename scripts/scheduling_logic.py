@@ -77,7 +77,6 @@ class ScheduleBuilder:
         - at most one non-vocal instrument per person
         - 1-2 guitarists, 1 keys, 3 vocalists per week. Others optional.
         - 1 leader every week. Leader should sing & play
-        - Anna scheduled on weeks Brady is
         - more...
     '''
     def set_constraints(self):
@@ -133,13 +132,6 @@ class ScheduleBuilder:
             self.model.Add(sum(self.leader_assignments[(l, w)] for w in self.T) <= 2)
             self.model.Add(sum(self.leader_assignments[(l, w)] for w in self.T) >= 1)
 
-        # # Brady and Anna together
-        # for w in self.T:
-        #     self.model.AddImplication(self.schedule[("Brady", w, "Guitar")], self.schedule[("Anna", w, "Vocals")])
-        #     self.model.AddImplication(self.schedule[("Anna", w, "Vocals")], self.schedule[("Brady", w, "Guitar")])
-
-        # Prefer Renee on violin
-
         # add a variable to easily track if a person is scheduled in week i or not
         for p in self.P:
             for w in self.T:
@@ -151,7 +143,6 @@ class ScheduleBuilder:
                     self.scheduled_pw[(p, w)],
                     [self.schedule[(p, w, i)] for i in self.I_all]
                 )
-
 
     def define_penalities_and_objective(self):
         self.freq_penalties = {}
