@@ -88,4 +88,5 @@ if submitted:
             st.session_state.done = True
             st.rerun()
         except Exception as e:
-            st.error(f"Database Error: {e}")
+            # st.error(f"Database Error: {e}")
+            st.error(f"Sorry, something went wrong. Please refresh the page and try again.")
